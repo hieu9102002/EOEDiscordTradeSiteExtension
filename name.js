@@ -28,61 +28,62 @@ async function fetchData() {
 }
 
 
-fetchData().then(map => {
-    const resultListObserver = new MutationObserver((mutationList) => {
-        for (const record of mutationList) {
-            /** @type {Element[]} */
-            const addedNodes = [...record.addedNodes.entries()]
-                .map(([_,node]) => node)
-                .filter(node => node?.classList.length === 1 && node.classList[0] === 'row')
-            
-            // Row = [Left, Middle, Right]
-            // > Middle = [[[Header, Description]]]
-            // > Right = [[Price div, Name div, Buttons div]]
-            // > > > Name div = [Name, Listed x days ago]
-            addedNodes.forEach(node => {
-                /** @type {string} */
-                const poeName = node.lastElementChild.lastElementChild.children[1]
-                                .firstElementChild.textContent;
-                if (!map[poeName]) {
-                    return;
-                }
-                const itemName = node.children[1].firstElementChild.firstElementChild.firstElementChild.textContent.replace(/\s\s+/g, ' ');
-                const [discId, discName] = map[poeName];
-                const buttonsDiv = node.lastElementChild.lastElementChild.lastElementChild;
-                const spanNode = document.createElement('span');
-                const discordButton = document.createElement('button')
-                discordButton.textContent = `Discord: ${discName}`
-                discordButton.className = 'btn btn-default'
-                discordButton.onclick = () => navigator.clipboard.writeText(`<@${discId}> Hi, can I buy your${itemName}`)
-                spanNode.appendChild(discordButton)
-                buttonsDiv.appendChild(spanNode)
-            })
-        }
-    })
-    
-    const resultObserver = new MutationObserver((mutationList) => {
-        for (const record of mutationList) {
-            // Check if result set is removed from DOM (usually happens when user searches a new item)
-            if ([...record.removedNodes.entries()].some(([_,node]) => node?.className === 'resultset')){
-                resultListObserver.disconnect()
-                continue;
-            }
-            const resultSetNode = [...record.addedNodes.entries()].find(([_,node]) => node?.className === 'resultset')?.[1]
-            if (resultSetNode) {
-                resultListObserver.observe(resultSetNode, {childList: true})
-            }
-        }
-    })
+const mapPromise = fetchData()
 
-    function wait() {
-        if (document.getElementsByClassName('results').length === 0) {
-            setTimeout(wait, 100)
-        } else {
-            const resultDiv = document.getElementsByClassName('results')[0]
-            resultObserver.observe(resultDiv, {childList: true})
+const resultListObserver = new MutationObserver(async (mutationList) => {
+    const map = await mapPromise;
+    for (const record of mutationList) {
+        /** @type {Element[]} */
+        const addedNodes = [...record.addedNodes.entries()]
+            .map(([_,node]) => node)
+            .filter(node => node?.classList.length === 1 && node.classList[0] === 'row')
+        
+        // Row = [Left, Middle, Right]
+        // > Middle = [[[Header, Description]]]
+        // > Right = [[Price div, Name div, Buttons div]]
+        // > > > Name div = [Name, Listed x days ago]
+        addedNodes.forEach(node => {
+            /** @type {string} */
+            const poeName = node.lastElementChild.lastElementChild.children[1]
+                            .firstElementChild.textContent;
+            if (!map[poeName]) {
+                return;
+            }
+            const itemName = node.children[1].firstElementChild.firstElementChild.firstElementChild.textContent.replace(/\s\s+/g, ' ');
+            const [discId, discName] = map[poeName];
+            const buttonsDiv = node.lastElementChild.lastElementChild.lastElementChild;
+            const spanNode = document.createElement('span');
+            const discordButton = document.createElement('button')
+            discordButton.textContent = `Discord: ${discName}`
+            discordButton.className = 'btn btn-default'
+            discordButton.onclick = () => navigator.clipboard.writeText(`<@${discId}> Hi, can I buy your${itemName}`)
+            spanNode.appendChild(discordButton)
+            buttonsDiv.appendChild(spanNode)
+        })
+    }
+})
+
+const resultObserver = new MutationObserver((mutationList) => {
+    for (const record of mutationList) {
+        // Check if result set is removed from DOM (usually happens when user searches a new item)
+        if ([...record.removedNodes.entries()].some(([_,node]) => node?.className === 'resultset')){
+            resultListObserver.disconnect()
+            continue;
+        }
+        const resultSetNode = [...record.addedNodes.entries()].find(([_,node]) => node?.className === 'resultset')?.[1]
+        if (resultSetNode) {
+            resultListObserver.observe(resultSetNode, {childList: true})
         }
     }
-
-    wait()
 })
+
+function wait() {
+    if (document.getElementsByClassName('results').length === 0) {
+        setTimeout(wait, 100)
+    } else {
+        const resultDiv = document.getElementsByClassName('results')[0]
+        resultObserver.observe(resultDiv, {childList: true})
+    }
+}
+
+wait()
