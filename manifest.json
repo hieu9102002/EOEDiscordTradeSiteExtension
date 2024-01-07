@@ -15,8 +15,7 @@
     "content_scripts": [
       {
         "matches": ["*://*.pathofexile.com/trade/*"],
-        "js": ["name.js"],
-        "run_at": "document_end"
+        "js": ["name.js"]
       }
     ]
   }
