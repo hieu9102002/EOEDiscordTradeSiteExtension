@@ -1,0 +1,23 @@
+{
+    "manifest_version": 2,
+    "name": "Discord Name",
+    "version": "1.0",
+  
+    "description": "Adds a red border to all webpages matching mozilla.org.",
+  
+    "icons": {
+      "48": "icons/border-48.png"
+    },
+
+    "permissions": ["*://firestore.googleapis.com/*"],
+    "host_permissions": ["*://firestore.googleapis.com/*"],
+  
+    "content_scripts": [
+      {
+        "matches": ["*://*.pathofexile.com/trade/*"],
+        "js": ["name.js"],
+        "run_at": "document_end"
+      }
+    ]
+  }
+  
