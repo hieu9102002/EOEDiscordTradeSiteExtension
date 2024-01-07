@@ -2,7 +2,14 @@
     "manifest_version": 3,
     "name": "Discord Name",
     "version": "1.0",
-  
+
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "hieu9102002@gmail.com",
+        "strict_min_version": "42.0"
+      }
+    },
+        
     "description": "Adds a button to quickly get EOE member's Discord name and copy message for trade",
   
     "icons": {
