@@ -17,12 +17,13 @@ async function fetchData() {
             })
         })
 
-    /** @type {{document: {fields: {discord_username: {stringValue: string}, poe_username: {stringValue: string}}}}[]} */
+    /** @type {{document: {fields: {snowflake: {stringValue: string},discord_username: {stringValue: string}, poe_username: {stringValue: string}}}}[]} */
     const resultLists = await result.json()
     return Object.fromEntries(resultLists.map(doc => {
         const poeName = doc.document.fields.poe_username.stringValue;
         const discName = doc.document.fields.discord_username.stringValue;
-        return [poeName, discName]
+        const discId = doc.document.fields.snowflake.stringValue;
+        return [poeName, [discId, discName]]
     }))
 }
 
@@ -36,18 +37,24 @@ fetchData().then(map => {
                 .filter(node => node?.classList.length === 1 && node.classList[0] === 'row')
             
             // Row = [Left, Middle, Right]
+            // > Middle = [[[Header, Description]]]
             // > Right = [[Price div, Name div, Buttons div]]
             // > > > Name div = [Name, Listed x days ago]
             addedNodes.forEach(node => {
+                /** @type {string} */
                 const poeName = node.lastElementChild.lastElementChild.children[1]
                                 .firstElementChild.textContent;
-                const discName = map[poeName];
+                if (!map[poeName]) {
+                    return;
+                }
+                const itemName = node.children[1].firstElementChild.firstElementChild.firstElementChild.textContent.replace(/\s\s+/g, ' ');
+                const [discId, discName] = map[poeName];
                 const buttonsDiv = node.lastElementChild.lastElementChild.lastElementChild;
                 const spanNode = document.createElement('span');
                 const discordButton = document.createElement('button')
-                discordButton.textContent = `Discord: ${discName}` ?? 'No discord names found'
+                discordButton.textContent = `Discord: ${discName}`
                 discordButton.className = 'btn btn-default'
-                discordButton.onclick = () => navigator.clipboard.writeText(`@${discName}`)
+                discordButton.onclick = () => navigator.clipboard.writeText(`<@${discId}> Hi, can I buy your${itemName}`)
                 spanNode.appendChild(discordButton)
                 buttonsDiv.appendChild(spanNode)
             })
