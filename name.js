@@ -36,7 +36,7 @@ const resultListObserver = new MutationObserver(async (mutationList) => {
         /** @type {Element[]} */
         const addedNodes = [...record.addedNodes.entries()]
             .map(([_,node]) => node)
-            .filter(node => node?.classList.length === 1 && node.classList[0] === 'row')
+            .filter(node => node?.classList?.length === 1 && node.classList[0] === 'row')
         
         // Row = [Left, Middle, Right]
         // > Middle = [[[Header, Description]]]
