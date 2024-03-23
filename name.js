@@ -40,8 +40,32 @@ async function fetchData() {
 
 const mapPromise = fetchData()
 
-const resultListObserver = new MutationObserver(async (mutationList) => {
+/**
+ * 
+ * @param {Element} node 
+ */
+const handleNodes = async (node) => {
     const map = await mapPromise;
+
+    /** @type {string} */
+    const poeName = node.lastElementChild.lastElementChild.children[1]
+        .firstElementChild.textContent;
+    if (!map[poeName]) {
+        return;
+    }
+    const itemName = node.children[1].firstElementChild.firstElementChild.firstElementChild.textContent.replace(/\s\s+/g, ' ');
+    const [discId, discName] = map[poeName];
+    const buttonsDiv = node.lastElementChild.lastElementChild.lastElementChild;
+    const spanNode = document.createElement('span');
+    const discordButton = document.createElement('button')
+    discordButton.textContent = `Discord: ${discName}`
+    discordButton.className = 'btn btn-default'
+    discordButton.onclick = () => navigator.clipboard.writeText(`<@${discId}> Hi, can I buy your${itemName}`)
+    spanNode.appendChild(discordButton)
+    buttonsDiv.appendChild(spanNode)
+}
+
+const resultListObserver = new MutationObserver(async (mutationList) => {
     for (const record of mutationList) {
         /** @type {Element[]} */
         const addedNodes = [...record.addedNodes.entries()]
@@ -52,24 +76,8 @@ const resultListObserver = new MutationObserver(async (mutationList) => {
         // > Middle = [[[Header, Description]]]
         // > Right = [[Price div, Name div, Buttons div]]
         // > > > Name div = [Name, Listed x days ago]
-        addedNodes.forEach(node => {
-            /** @type {string} */
-            const poeName = node.lastElementChild.lastElementChild.children[1]
-                            .firstElementChild.textContent;
-            if (!map[poeName]) {
-                return;
-            }
-            const itemName = node.children[1].firstElementChild.firstElementChild.firstElementChild.textContent.replace(/\s\s+/g, ' ');
-            const [discId, discName] = map[poeName];
-            const buttonsDiv = node.lastElementChild.lastElementChild.lastElementChild;
-            const spanNode = document.createElement('span');
-            const discordButton = document.createElement('button')
-            discordButton.textContent = `Discord: ${discName}`
-            discordButton.className = 'btn btn-default'
-            discordButton.onclick = () => navigator.clipboard.writeText(`<@${discId}> Hi, can I buy your${itemName}`)
-            spanNode.appendChild(discordButton)
-            buttonsDiv.appendChild(spanNode)
-        })
+        const promises = addedNodes.map(handleNodes)
+        await Promise.allSettled(promises)
     }
 })
 
@@ -87,10 +95,12 @@ const resultObserver = new MutationObserver((mutationList) => {
     }
 })
 
-function wait() {
+async function wait() {
     if (document.getElementsByClassName('results').length === 0) {
         setTimeout(wait, 100)
     } else {
+        const results = document.querySelectorAll('.results .row');
+        Promise.allSettled([...results].map(handleNodes))
         const resultDiv = document.getElementsByClassName('results')[0]
         resultObserver.observe(resultDiv, {childList: true})
     }
