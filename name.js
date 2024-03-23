@@ -1,4 +1,9 @@
+const cacheTime = 3 * 60 * 60 * 1000
 async function fetchData() {
+    const cache = await browser.storage.local.get("users")
+    if (cache.users && (Date.now() - (new Date(cache.users.lastQueried)).getTime()) < cacheTime)
+        return cache.users
+
     const result = await fetch(
         'https://firestore.googleapis.com/v1/projects/east-oriath-exiles/databases/(default)/documents/:runQuery',
         {
@@ -19,12 +24,17 @@ async function fetchData() {
 
     /** @type {{document: {fields: {snowflake: {stringValue: string},discord_username: {stringValue: string}, poe_username: {stringValue: string}}}}[]} */
     const resultLists = await result.json()
-    return Object.fromEntries(resultLists.map(doc => {
+    const users = Object.fromEntries(resultLists.map(doc => {
         const poeName = doc.document.fields.poe_username.stringValue;
         const discName = doc.document.fields.discord_username.stringValue;
         const discId = doc.document.fields.snowflake.stringValue;
         return [poeName, [discId, discName]]
     }))
+    users.lastQueried = Date.now()
+    await browser.storage.local.set({
+        users: users
+    })
+    return users
 }
 
 

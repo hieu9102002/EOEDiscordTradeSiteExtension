@@ -23,6 +23,10 @@
         "matches": ["*://*.pathofexile.com/trade/*"],
         "js": ["name.js"]
       }
+    ],
+
+    "permissions": [
+      "storage"
     ]
   }
   
