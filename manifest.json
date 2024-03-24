@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Discord Name",
+    "name": "EOEDiscordTradeSiteExtension",
     "version": "1.3",
 
     "browser_specific_settings": {
